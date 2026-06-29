@@ -27,6 +27,7 @@ use hbb_common::{
 };
 
 use crate::{
+    build_config,
     check_port,
     server::{check_zombie, new as new_server, ConnectionMeta, ServerPtr},
 };
@@ -824,6 +825,13 @@ impl RendezvousMediator {
 
     fn get_relay_server(&self, provided_by_rendezvous_server: String) -> String {
         let mut relay_server = Config::get_option("relay-server");
+        if relay_server.is_empty() {
+            // Check compile-time embedded relay server (from CI secrets / env vars)
+            let embedded = build_config::get_embedded_relay_server();
+            if !embedded.is_empty() {
+                relay_server = embedded.to_owned();
+            }
+        }
         if relay_server.is_empty() {
             relay_server = provided_by_rendezvous_server;
         }

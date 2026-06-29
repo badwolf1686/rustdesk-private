@@ -1,3 +1,4 @@
+mod build_config;
 mod keyboard;
 /// cbindgen:ignore
 pub mod platform;

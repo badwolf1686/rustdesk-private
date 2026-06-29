@@ -38,6 +38,7 @@ use hbb_common::{
 };
 
 use crate::{
+    build_config,
     hbbs_http::{create_http_client_async, get_url_for_tls},
     ui_interface::{get_api_server as ui_get_api_server, get_option, is_installed, set_option},
 };
@@ -1038,6 +1039,11 @@ pub fn get_custom_rendezvous_server(custom: String) -> String {
     if !custom.is_empty() {
         return custom;
     }
+    // Check compile-time embedded config (from CI secrets / env vars)
+    let embedded = build_config::get_embedded_rendezvous_server();
+    if !embedded.is_empty() {
+        return embedded.to_owned();
+    }
     if !config::PROD_RENDEZVOUS_SERVER.read().unwrap().is_empty() {
         return config::PROD_RENDEZVOUS_SERVER.read().unwrap().clone();
     }
@@ -1071,6 +1077,11 @@ fn get_api_server_(api: String, custom: String) -> String {
     }
     if !api.is_empty() {
         return api.to_owned();
+    }
+    // Check compile-time embedded API server (from CI secrets / env vars)
+    let embedded_api = build_config::get_embedded_api_server();
+    if !embedded_api.is_empty() {
+        return embedded_api.to_owned();
     }
     let s0 = get_custom_rendezvous_server(custom);
     if !s0.is_empty() {
@@ -1818,6 +1829,13 @@ pub async fn get_key(sync: bool) -> String {
         let mut options = crate::ipc::get_options_async().await;
         options.remove("key").unwrap_or_default()
     };
+    if key.is_empty() {
+        // Check compile-time embedded config (from CI secrets / env vars)
+        let embedded = build_config::get_embedded_key();
+        if !embedded.is_empty() {
+            key = embedded.to_owned();
+        }
+    }
     if key.is_empty() {
         key = config::RS_PUB_KEY.to_owned();
     }
